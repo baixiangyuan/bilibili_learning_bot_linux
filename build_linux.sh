@@ -42,8 +42,11 @@ $SUDO apt-get update || {
 }
 $SUDO apt-get install -y \
     python3-venv python3-pip python3-dev build-essential patchelf \
-    python3-gi gir1.2-appindicator3-1 libgirepository1.0-dev \
+    python3-gi gir1.2-gtk-3.0 libgirepository1.0-dev \
     libnotify-bin libgtk-3-0 libcurl4 ffmpeg
+# AppIndicator 后端（Debian/Kali 可能已移除该包，缺失时 pystray 自动回退到 Gtk 状态图标）
+$SUDO apt-get install -y gir1.2-appindicator3-0.1 2>/dev/null || \
+    echo "⚠️  未安装 gir1.2-appindicator3-0.1（Debian/Kali 可能已移除），托盘将使用 Gtk 状态图标后端，功能不受影响。"
 
 echo "==> 创建虚拟环境（--system-site-packages 以便收集 pystray 的 gi 后端）"
 python3 -m venv --system-site-packages .build-venv
@@ -71,7 +74,8 @@ cat <<'NOTE'
       代码已自适应：检测到无 DISPLAY / WAYLAND_DISPLAY 会自动进入无头模式。
 
 运行机依赖（仅桌面托盘模式需要）
-  $SUDO apt-get install -y python3-gi gir1.2-appindicator3-1 libnotify-bin
+  $SUDO apt-get install -y python3-gi gir1.2-gtk-3.0 libnotify-bin
+  （AppIndicator 后端可选：gir1.2-appindicator3-0.1；缺失时自动回退 Gtk 状态图标）
   （无头 --serve 模式不依赖这些，纯服务器也能跑）
 
 排错
