@@ -85,6 +85,16 @@ echo "==> 安装系统依赖"
 if [ "$IS_TERMUX" -eq 1 ]; then
   # Termux：python-docx 依赖 lxml，需 libxml2/libxslt 头文件（Termux 包内含头部）
   install_pkgs python ffmpeg patchelf build-essential pkg-config libxml2 libxslt
+  # Termux 以预编译 .deb 形式提供 Python 原生包（含 pydantic-core / Pillow / lxml / cryptography /
+  # aiohttp 等 Rust·C 扩展），可直接复用，避免 pip 在 Android 上从源码编译
+  # （PyPI 没有 Android 平台的预编译 wheel，会退回源码构建并索要 Rust 工具链）。
+  echo "==> 安装 Termux 预编译 Python 原生包"
+  for p in python-pillow python-lxml python-cryptography python-pydantic python-cffi \
+           python-aiohttp python-yarl python-multidict python-frozenlist python-aiosignal \
+           python-async-timeout python-attrs python-reportlab python-bcrypt; do
+    $PKG install -y "$p" 2>/dev/null || \
+      echo "⚠️  预编译包 $p 不可用，将回退到 pip 源码编译（可能需要 rust 工具链）"
+  done
 else
   # lxml（python-docx 间接依赖）编译需要 libxml2-dev / libxslt1-dev
   install_pkgs python3 python3-venv python3-pip ffmpeg patchelf build-essential pkg-config libxml2-dev libxslt1-dev
@@ -94,15 +104,37 @@ echo "==> 创建虚拟环境"
 VENV_DIR=".build-venv"
 if [ -d "$VENV_DIR" ]; then
   echo "    已存在 $VENV_DIR，跳过创建。"
+  if [ "$IS_TERMUX" -eq 1 ]; then
+    if ! grep -q "include-system-site-packages = true" "$VENV_DIR/pyvenv.cfg" 2>/dev/null; then
+      echo "    ⚠️  Termux 下需继承系统预编译包，但现有 venv 未开启 system-site-packages。"
+      echo "       请先执行： rm -rf $VENV_DIR  再重新运行本脚本。"
+    fi
+  fi
 else
-  python3 -m venv "$VENV_DIR"
+  if [ "$IS_TERMUX" -eq 1 ]; then
+    # 关键：Termux 的预编译原生包装在系统 site-packages，必须继承才能被复用，
+    # 否则 pip 仍会去 PyPI 拉 manylinux wheel 并触发源码编译。
+    python3 -m venv --system-site-packages "$VENV_DIR"
+  else
+    python3 -m venv "$VENV_DIR"
+  fi
 fi
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
 echo "==> 安装 Python 依赖"
 pip install -U pip wheel setuptools
-pip install -r requirements.txt
+
+if [ "$IS_TERMUX" -eq 1 ]; then
+  # Termux：去掉版本锁，优先复用上面装好的预编译包（它们的版本已满足 >= 约束），
+  # 避免 pip 去拉 manylinux-only 的精确版本而触发源码编译。
+  REQ_RELAXED="$APP_DIR/.requirements-termux.txt"
+  grep -vE '^\s*#|^\s*$' requirements.txt | sed -E 's/(==|>=|<=|~=|!=)[^[:space:]]*//' > "$REQ_RELAXED"
+  echo "    已生成放宽版本约束的清单： $REQ_RELAXED"
+  pip install -r "$REQ_RELAXED"
+else
+  pip install -r requirements.txt
+fi
 
 echo ""
 echo "──────────────────────── 安装完成 ────────────────────────"
