@@ -28,6 +28,8 @@ echo "==> 工作目录: $APP_DIR"
 python3 --version
 
 echo "==> 安装系统依赖"
+# 强制 apt 走 IPv4：部分镜像（如 neusoft）只解析出不可达的 IPv6 地址，会卡死下载。
+APT_OPTS="-o Acquire::ForceIPv4=true"
 # 检测并提示已知的坏源（docker-ce 镜像指向 kali-rolling 会 404）
 if grep -rIl "docker" /etc/apt/sources.list.d/ /etc/apt/sources.list 2>/dev/null \
    | xargs grep -Il "kali-rolling" 2>/dev/null | head -1 | grep -q .; then
@@ -36,16 +38,29 @@ if grep -rIl "docker" /etc/apt/sources.list.d/ /etc/apt/sources.list 2>/dev/null
     echo "    根治：把该源里的 kali-rolling 改成 bookworm，或删掉对应 .list 后 sudo apt-get update。"
 fi
 echo "    更新 apt 索引（第三方源报错可忽略，不影响本项目依赖）"
-$SUDO apt-get update || {
+$SUDO apt-get $APT_OPTS update || {
     echo "⚠️  apt-get update 返回非零：通常是无关的第三方源（如 docker-ce 镜像）配置错误。"
     echo "    本项目依赖（python3-venv / pystray 后端 / ffmpeg 等）来自 kali-rolling 已正常获取，继续安装。"
 }
-$SUDO apt-get install -y \
+# 安装带重试（镜像偶尔抽风/单包下载失败时自动重试）
+install_pkgs() {
+    local attempt
+    for attempt in 1 2 3; do
+        if $SUDO apt-get $APT_OPTS install -y "$@"; then
+            return 0
+        fi
+        echo "⚠️  apt-get install 第 $attempt 次失败（可能是镜像临时抽风），3 秒后重试..." >&2
+        sleep 3
+    done
+    echo "❌ apt-get install 多次失败，请检查网络后手动安装：$*" >&2
+    return 1
+}
+install_pkgs \
     python3-venv python3-pip python3-dev build-essential patchelf \
     python3-gi gir1.2-gtk-3.0 libgirepository1.0-dev \
     libnotify-bin libgtk-3-0 libcurl4 ffmpeg
 # AppIndicator 后端（Debian/Kali 可能已移除该包，缺失时 pystray 自动回退到 Gtk 状态图标）
-$SUDO apt-get install -y gir1.2-appindicator3-0.1 2>/dev/null || \
+install_pkgs gir1.2-appindicator3-0.1 2>/dev/null || \
     echo "⚠️  未安装 gir1.2-appindicator3-0.1（Debian/Kali 可能已移除），托盘将使用 Gtk 状态图标后端，功能不受影响。"
 
 echo "==> 创建虚拟环境（--system-site-packages 以便收集 pystray 的 gi 后端）"
@@ -79,7 +94,7 @@ cat <<'NOTE'
   （无头 --serve 模式不依赖这些，纯服务器也能跑）
 
 排错
-  • 托盘启动失败：确认装了 gir1.2-appindicator3-1；或改用 --serve 无头模式。
+  • 托盘启动失败：确认装了 gir1.2-appindicator3-0.1（或 gir1.2-gtk-3.0）；或改用 --serve 无头模式。
   • 想看 Flask 日志：用终端运行即可；或把 BiliLearn.spec 里 EXE 的 console 改为
     True 后重新执行本脚本。
   • 新版本提醒弹窗依赖 zenity / notify-send；两者都没有时会在终端打印提醒。
