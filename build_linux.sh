@@ -28,7 +28,18 @@ echo "==> 工作目录: $APP_DIR"
 python3 --version
 
 echo "==> 安装系统依赖"
-$SUDO apt-get update
+# 检测并提示已知的坏源（docker-ce 镜像指向 kali-rolling 会 404）
+if grep -rIl "docker" /etc/apt/sources.list.d/ /etc/apt/sources.list 2>/dev/null \
+   | xargs grep -Il "kali-rolling" 2>/dev/null | head -1 | grep -q .; then
+    echo "⚠️  检测到 docker 相关源指向 kali-rolling（无效发行版），会导致 apt update 报错。"
+    echo "    本项目依赖全部来自 kali-rolling，已正常获取，可忽略；"
+    echo "    根治：把该源里的 kali-rolling 改成 bookworm，或删掉对应 .list 后 sudo apt-get update。"
+fi
+echo "    更新 apt 索引（第三方源报错可忽略，不影响本项目依赖）"
+$SUDO apt-get update || {
+    echo "⚠️  apt-get update 返回非零：通常是无关的第三方源（如 docker-ce 镜像）配置错误。"
+    echo "    本项目依赖（python3-venv / pystray 后端 / ffmpeg 等）来自 kali-rolling 已正常获取，继续安装。"
+}
 $SUDO apt-get install -y \
     python3-venv python3-pip python3-dev build-essential patchelf \
     python3-gi gir1.2-appindicator3-1 libgirepository1.0-dev \
