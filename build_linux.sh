@@ -56,9 +56,10 @@ install_pkgs() {
     return 1
 }
 install_pkgs \
-    python3-venv python3-pip python3-dev build-essential patchelf \
+    python3-venv python3-pip python3-dev build-essential patchelf pkg-config \
     python3-gi gir1.2-gtk-3.0 libgirepository1.0-dev \
-    libnotify-bin libgtk-3-0 libcurl4 ffmpeg
+    libnotify-bin libgtk-3-0 libcurl4 ffmpeg \
+    libxml2-dev libxslt1-dev
 # AppIndicator 后端（Debian/Kali 可能已移除该包，缺失时 pystray 自动回退到 Gtk 状态图标）
 install_pkgs gir1.2-appindicator3-0.1 2>/dev/null || \
     echo "⚠️  未安装 gir1.2-appindicator3-0.1（Debian/Kali 可能已移除），托盘将使用 Gtk 状态图标后端，功能不受影响。"

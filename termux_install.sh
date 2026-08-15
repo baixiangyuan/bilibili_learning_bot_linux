@@ -83,9 +83,11 @@ install_pkgs() {
 
 echo "==> 安装系统依赖"
 if [ "$IS_TERMUX" -eq 1 ]; then
-  install_pkgs python ffmpeg patchelf build-essential
+  # Termux：python-docx 依赖 lxml，需 libxml2/libxslt 头文件（Termux 包内含头部）
+  install_pkgs python ffmpeg patchelf build-essential pkg-config libxml2 libxslt
 else
-  install_pkgs python3 python3-venv python3-pip ffmpeg patchelf build-essential
+  # lxml（python-docx 间接依赖）编译需要 libxml2-dev / libxslt1-dev
+  install_pkgs python3 python3-venv python3-pip ffmpeg patchelf build-essential pkg-config libxml2-dev libxslt1-dev
 fi
 
 echo "==> 创建虚拟环境"
