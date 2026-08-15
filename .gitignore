@@ -1,0 +1,125 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.env.*
+
+# Local build and release outputs
+/build/
+/dist/
+/release/
+/exe/
+/.pytest_cache/
+
+# Unused local image retained only on this workstation
+/project image.jpg
+
+# Local data
+Data/
+!Data/.gitkeep
+config.json
+
+# Runtime files
+bot_memory.json
+bot_journal.md
+upstream-bilibili-ai-bot.zip
+*.zip
+*.db
+*.tmp
+bot.pid
+bot_web.log
+*.log
+
+# Knowledge base
+KnowledgeBase/
+
+# ASR model files (large)
+model/asr/
+model/
+
+# HTML exports (generated files)
+html_exports/
+MindMaps/
+Word/
+
+# Backup files
+*.bak
+*.bak.*
+backup_*/
+backups/
+storage/
+
+# Temp / test files
+_test_*.py
+*_test_output.txt
+*_result.json
+_run_*.py
+_verify*.py
+
+# Runtime data
+learning_log.md
+bot_memory.json
+bot_journal.md
+html_ids.txt
+js_ids.txt
+knowledge_metadata.json
+
+# QR codes (personal login images)
+api/qr_codes/*.png
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+
+# Reasonix temp
+.reasonix/
+.cipher_key
+.web_secret_key
+
+# Sogou IME accidental directory (created by a known input-method bug)
+/%SystemDrive%/
+
+# Web panel runtime logs (redirected by launcher scripts)
+/runtime/
+
+# Local builds kept out of the repo
+/web_panel_error*.log
+
+*.key
+*.pem
+credentials
+password
+*.env
+_panel_stdout.log
+
+# ---- Dev scratch / local backups (added for the Linux packaging branch) ----
+# Chinese-prefixed dev-session backup dirs
+备份*/
+
+# Extracted HTML block fragments and i18n dev tooling
+_block*.js
+_served_main.html
+_i18n_*.py
+_i18n_strings.txt
+_esprima_*.py
+_find_*.py
+_extract_*.py
+_fetch_*.py
+_inspect_*.py
+_check_*.py
+_v8_check.py
+_vd.py
+
+# Ad-hoc one-off maintenance scripts
+cleanup_c_drive.ps1
+
+# Old/backup copies of generated source
+web_panel.html.mindmap_bak_*
+web_panel.html.old_*
+web_panel.py.old_*_bak*
