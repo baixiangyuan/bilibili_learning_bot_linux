@@ -65,7 +65,11 @@ install_pkgs gir1.2-appindicator3-0.1 2>/dev/null || \
     echo "⚠️  未安装 gir1.2-appindicator3-0.1（Debian/Kali 可能已移除），托盘将使用 Gtk 状态图标后端，功能不受影响。"
 
 echo "==> 创建虚拟环境（--system-site-packages 以便收集 pystray 的 gi 后端）"
-python3 -m venv --system-site-packages .build-venv
+if [ -d .build-venv ]; then
+    echo "    已存在 .build-venv，跳过创建（可手动 rm -rf .build-venv 强制重建）。"
+else
+    python3 -m venv --system-site-packages .build-venv
+fi
 # shellcheck disable=SC1091
 source .build-venv/bin/activate
 
